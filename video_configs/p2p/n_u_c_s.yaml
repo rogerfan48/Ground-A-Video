@@ -1,0 +1,43 @@
+ckpt: "gligen-inpainting-text-box/diffusion_pytorch_model.bin"
+input_images_path: "video_images/p2p/n_u_c_s"
+prompt: "A police's back and an iron man's back move inside a room."
+source_prompt: "A young man's back and a man in a hat's back move inside a room."
+phrases:
+  - ["a police's back", "an iron man's back"]
+  - ["a police's back", "an iron man's back"]
+  - ["a police's back", "an iron man's back"]
+  - ["a police's back", "an iron man's back"]
+  - ["a police's back", "an iron man's back"]
+  - ["a police's back", "an iron man's back"]
+  - ["a police's back", "an iron man's back"]
+  - ["a police's back", "an iron man's back"]
+  - ["a police's back", "an iron man's back"]
+  - ["a police's back", "an iron man's back"]
+  - ["a police's back", "an iron man's back"]
+  - ["a police's back", "an iron man's back"]
+locations:
+  - [[0.67, 0.29, 0.87, 0.83], [0.83, 0.17, 1.0, 1.0]]
+  - [[0.67, 0.30, 0.86, 0.76], [0.68, 0.18, 1.0, 1.0]]
+  - [[0.68, 0.30, 0.83, 0.76], [0.65, 0.18, 1.0, 1.0]]
+  - [[0.69, 0.30, 0.81, 0.61], [0.63, 0.19, 1.0, 1.0]]
+  - [[0.69, 0.34, 0.80, 0.79], [0.64, 0.19, 1.0, 1.0]]
+  - [[0.0, 0.0, 0.0, 0.0], [0.61, 0.18, 0.96, 1.0]]
+  - [[0.0, 0.0, 0.0, 0.0], [0.56, 0.16, 0.88, 1.0]]
+  - [[0.0, 0.0, 0.0, 0.0], [0.52, 0.16, 0.87, 1.0]]
+  - [[0.0, 0.0, 0.0, 0.0], [0.43, 0.15, 0.84, 1.0]]
+  - [[0.0, 0.0, 0.0, 0.0], [0.38, 0.16, 0.81, 1.0]]
+  - [[0.69, 0.32, 0.77, 0.53], [0.31, 0.17, 0.77, 1.0]]
+  - [[0.66, 0.33, 0.75, 0.68], [0.25, 0.18, 0.71, 1.0]]
+source_phrases:
+  - ["a young man's back", "a man in a hat's back"]
+  - ["a young man's back", "a man in a hat's back"]
+  - ["a young man's back", "a man in a hat's back"]
+  - ["a young man's back", "a man in a hat's back"]
+  - ["a young man's back", "a man in a hat's back"]
+  - ["a young man's back", "a man in a hat's back"]
+  - ["a young man's back", "a man in a hat's back"]
+  - ["a young man's back", "a man in a hat's back"]
+  - ["a young man's back", "a man in a hat's back"]
+  - ["a young man's back", "a man in a hat's back"]
+  - ["a young man's back", "a man in a hat's back"]
+  - ["a young man's back", "a man in a hat's back"]
