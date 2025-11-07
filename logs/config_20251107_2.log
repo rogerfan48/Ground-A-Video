@@ -1,0 +1,59 @@
+================================================================================
+🎬 Starting dataset conversion for Ground-A-Video
+================================================================================
+📁 Assets directory: /home/roger/code/TRACK/Ground-A-Video/assets
+📋 Default config: n_frames=8, start=0, rate=1
+================================================================================
+
+
+================================================================================
+📂 Processing category: o2o
+================================================================================
+Found 6 samples in o2o
+   ⏭️  Skipping sample 3ball
+   ⏭️  Skipping sample car_truck
+   ⏭️  Skipping sample cloth-bag
+   ⏭️  Skipping sample dog-cat
+   ⏭️  Skipping sample elephant
+   ⏭️  Skipping sample hair
+
+
+================================================================================
+📂 Processing category: o2p
+================================================================================
+Found 3 samples in o2p
+   ⏭️  Skipping sample Charlie-pillar
+   ⏭️  Skipping sample man-obj-horizontal
+   ⏭️  Skipping sample woman_car
+
+
+================================================================================
+📂 Processing category: p2p
+================================================================================
+Found 6 samples in p2p
+   ⏭️  Skipping sample 02_walk_walk
+   ⏭️  Skipping sample 03_withwalk
+   ⏭️  Skipping sample chinese_palace
+
+📹 Processing p2p/lalaland: 65 frames
+   Config: n_sample_frames=15, start_frame=0, rate=4
+   Sampled frame indices: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56]
+   Found 2 objects: ['obj1', 'obj2']
+   Copying frames to /home/roger/code/TRACK/Ground-A-Video/video_images/p2p/lalaland
+   Saving config to /home/roger/code/TRACK/Ground-A-Video/video_configs/p2p/lalaland.yaml
+✅ Successfully processed p2p/lalaland
+   ⏭️  Skipping sample n_u_c_s
+   ⏭️  Skipping sample u_name
+
+================================================================================
+📊 CONVERSION SUMMARY
+================================================================================
+✅ Successfully processed: 1 samples
+❌ Failed: 0 samples
+📁 Output directories:
+   - Frames: /home/roger/code/TRACK/Ground-A-Video/video_images
+   - Configs: /home/roger/code/TRACK/Ground-A-Video/video_configs
+
+⚠️  NOTE: Please update the 'prompt' and 'source_prompt' fields in the
+   generated YAML files with appropriate descriptions for each video.
+================================================================================

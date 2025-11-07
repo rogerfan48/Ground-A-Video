@@ -83,7 +83,7 @@ SAMPLE_CONFIGS = {
     'p2p/lalaland': {
         'n_sample_frames': 15,
         'start_sample_frame': 0,
-        'sampling_rate': 5,
+        'sampling_rate': 4,
     },
     'p2p/n_u_c_s': {
         'n_sample_frames': 12,
