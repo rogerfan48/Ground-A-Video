@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     new_conv_weight = torch.zeros(320, 4+4+1, 3, 3 )
 
-    ckpt = torch.load(args.ckpt_path, map_location="cpu")
+    ckpt = torch.load(args.ckpt_path, map_location="cpu", weights_only=False)
 
     for key,value in ckpt["model"].items():
         if key == "input_blocks.0.0.weight":

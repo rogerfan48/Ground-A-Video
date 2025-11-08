@@ -92,7 +92,7 @@ def get_clip_feature(model, processor, input, is_image=False):
         outputs = model(**inputs)
         feature = outputs.image_embeds 
         if which_layer_image == 'after_reproject':
-            feature = project( feature, torch.load('projection_matrix').cuda().T ).squeeze(0)
+            feature = project( feature, torch.load('projection_matrix', weights_only=False).cuda().T ).squeeze(0)
             feature = ( feature / feature.norm() )  * 28.7 
             feature = feature.unsqueeze(0)
     else:
@@ -248,7 +248,7 @@ def save_images_as_gif(images, save_path, optimize=False, loop=0, duration=250):
 
 
 def load_ckpt(ckpt_path):
-    saved_ckpt = torch.load(ckpt_path)
+    saved_ckpt = torch.load(ckpt_path, weights_only=False)
     config = saved_ckpt["config_dict"]["_content"]
 
     autoencoder = instantiate_from_config(config['autoencoder']).eval()
@@ -268,7 +268,7 @@ def load_unet3d(pretrained_unet_path):
     unet3d = instantiate_from_config(unet3d_config).eval()
     
     # load weights
-    state_dict = torch.load(os.path.join(pretrained_unet_path,"diffusion_pytorch_model.bin"), map_location="cpu")
+    state_dict = torch.load(os.path.join(pretrained_unet_path,"diffusion_pytorch_model.bin"), map_location="cpu", weights_only=False)
     unet3d.load_2d_state_dict(state_dict=state_dict)
 
     return unet3d
@@ -279,7 +279,7 @@ def load_unet2d(pretrained_unet_path):
     unet_config["target"] = "ldm.modules.diffusionmodules.openaimodel.UNetModel"
     unet2d = instantiate_from_config(unet_config).eval()
 
-    state_dict = torch.load(os.path.join(pretrained_unet_path,"diffusion_pytorch_model.bin"), map_location="cpu")
+    state_dict = torch.load(os.path.join(pretrained_unet_path,"diffusion_pytorch_model.bin"), map_location="cpu", weights_only=False)
     unet2d.load_2d_state_dict(state_dict=state_dict)
 
     return unet2d

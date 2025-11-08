@@ -1,3 +1,41 @@
+# TRACE paper Evaluation - Ground-A-Video
+
+## Purpose of This Fork
+This repository is a fork maintained by the TRACE paper team, used for experimental comparison in our work:
+**"TRACE - Temporal Rectification of Attention for Cross-object Editing"** (paper not yet published).
+We use this repo to benchmark Ground-A-Video against our own model using our custom dataset and scripts.
+
+### Our Dataset and Conversion Pipeline
+- Original videos and annotations are stored in `assets/`
+- Use `convert_dataset.py` to convert and generate the required `video_images/` and `video_configs/` for Ground-A-Video
+
+### Batch Evaluation Script
+- Run `run.sh` to automatically process all configs under `video_configs/` (o2o, o2p, p2p), outputting results to `outputs/` and logging to `logs/`
+- `run.sh` will automatically activate the conda environment, set CUDA memory configs, and supports per-config `clip_length` overrides (e.g., p2p/n_u_c_s uses clip_length=12, others use 15)
+
+### Fixes for Modern GPU/Environment
+The original Ground-A-Video only supported legacy python/pytorch/xformers and could not run on RTX 5090 + CUDA 12.8 + PyTorch 2.8, etc.
+This fork includes the following fixes:
+- All `torch.load` calls now use `weights_only=False` to support legacy checkpoints
+- Fixed `basicsr` import for compatibility with new torchvision API
+- Removed all runtime dependency on xformers (which fails on new GPUs/CUDA); replaced with PyTorch 2.8 built-in `scaled_dot_product_attention` as fallback, and updated all attention module fallback paths to avoid OOM
+- All xformers-related calls are now guarded with try/except and automatic fallback, so missing xformers will not cause errors
+- Batch script `run.sh` redesigned for automation, per-config clip_length override, logging, and environment activation
+
+### How to Run on Modern GPUs/Environment
+1. Install conda and create the environment:
+  ```bash
+  conda env create -f environment.yml
+  conda activate groundvideo_rtx5090
+  ```
+2. Follow the README to download model weights and prepare the dataset (`assets/` → `convert_dataset.py` → `video_images/`, `video_configs/`)
+3. Run batch evaluation:
+  ```bash
+  ./run.sh
+  ```
+4. For custom `clip_length` overrides, see RUN_README.md
+
+---
 # Ground-A-Video: Zero-shot Grounded Video Editing using Text-to-image Diffusion Models (ICLR 2024)
 This repository contains the official pytorch implementation of [Ground-A-Video](https://arxiv.org/abs/2310.01107).
 <br/> 

@@ -4,7 +4,12 @@ import torch
 import torch.nn.functional as F
 from torch import nn, einsum
 from torch.utils import checkpoint
-import xformers
+try:
+    import xformers
+    import xformers.ops
+    XFORMERS_AVAILABLE = True
+except ImportError:
+    XFORMERS_AVAILABLE = False
 from typing import Optional, List
 from einops import rearrange, repeat
 
@@ -131,9 +136,19 @@ class CrossAttention(nn.Module):
         k = k.view(B,M,H,C).permute(0,2,1,3).reshape(B*H,M,C)
         v = v.view(B,M,H,C).permute(0,2,1,3).reshape(B*H,M,C)
         
-        out = xformers.ops.memory_efficient_attention(
-            q, k, v, attn_bias=mask, op=None
-        )
+        if XFORMERS_AVAILABLE:
+            out = xformers.ops.memory_efficient_attention(
+                q, k, v, attn_bias=mask, op=None
+            )
+        else:
+            # Fallback to PyTorch's scaled_dot_product_attention
+            q = q.view(B, H, N, C)
+            k = k.view(B, H, M, C)
+            v = v.view(B, H, M, C)
+            out = torch.nn.functional.scaled_dot_product_attention(
+                q, k, v, attn_mask=mask, dropout_p=0.0, is_causal=False
+            )
+            out = out.view(B*H, N, C)
         out = out.view(B,H,N,C).permute(0,2,1,3).reshape(B,N,(H*C))
 
         return self.to_out(out)
@@ -193,9 +208,25 @@ class ModulatedCrossAttention(nn.Module):
         k = self.reshape_heads_to_batch_dim(k)
         v = self.reshape_heads_to_batch_dim(v)
 
-        out = xformers.ops.memory_efficient_attention(
-            q, k, v, attn_bias=mask, op=None
-        )
+        if XFORMERS_AVAILABLE:
+            out = xformers.ops.memory_efficient_attention(
+                q, k, v, attn_bias=mask, op=None
+            )
+        else:
+            # Fallback to PyTorch's scaled_dot_product_attention
+            B_times_H, N, C = q.shape
+            H = self.heads
+            B = B_times_H // H
+            _, M, _ = k.shape
+            
+            q = q.view(B, H, N, C)
+            k = k.view(B, H, M, C)
+            v = v.view(B, H, M, C)
+            
+            out = torch.nn.functional.scaled_dot_product_attention(
+                q, k, v, attn_mask=mask, dropout_p=0.0, is_causal=False
+            )
+            out = out.view(B_times_H, N, C)
         out = self.reshape_batch_dim_to_heads(out)
 
         return self.to_out(out)
@@ -243,9 +274,19 @@ class SelfAttention(nn.Module):
         k = k.view(B,N,H,C).permute(0,2,1,3).reshape(B*H,N,C)
         v = v.view(B,N,H,C).permute(0,2,1,3).reshape(B*H,N,C)
         
-        out = xformers.ops.memory_efficient_attention(
-            q, k, v, attn_bias=None, op=None
-        )
+        if XFORMERS_AVAILABLE:
+            out = xformers.ops.memory_efficient_attention(
+                q, k, v, attn_bias=None, op=None
+            )
+        else:
+            # Fallback to PyTorch's scaled_dot_product_attention
+            q = q.view(B, H, N, C)
+            k = k.view(B, H, N, C)
+            v = v.view(B, H, N, C)
+            out = torch.nn.functional.scaled_dot_product_attention(
+                q, k, v, attn_mask=None, dropout_p=0.0, is_causal=False
+            )
+            out = out.view(B*H, N, C)
         out = out.view(B,H,N,C).permute(0,2,1,3).reshape(B,N,(H*C))
 
         return self.to_out(out)
@@ -272,9 +313,25 @@ class SpatialTemporalAttention(CrossAttention):
         key = self.reshape_heads_to_batch_dim(key)
         value = self.reshape_heads_to_batch_dim(value)
         
-        out = xformers.ops.memory_efficient_attention(
-            query, key, value, attn_bias=attention_mask, op=None
-        )
+        if XFORMERS_AVAILABLE:
+            out = xformers.ops.memory_efficient_attention(
+                query, key, value, attn_bias=attention_mask, op=None
+            )
+        else:
+            # Fallback to PyTorch's scaled_dot_product_attention
+            B_times_H, N, C = query.shape
+            H = self.heads
+            B = B_times_H // H
+            _, M, _ = key.shape
+            
+            query = query.view(B, H, N, C)
+            key = key.view(B, H, M, C)
+            value = value.view(B, H, M, C)
+            
+            out = torch.nn.functional.scaled_dot_product_attention(
+                query, key, value, attn_mask=attention_mask, dropout_p=0.0, is_causal=False
+            )
+            out = out.view(B_times_H, N, C)
 
         out = self.reshape_batch_dim_to_heads(out)
         return self.to_out(out)

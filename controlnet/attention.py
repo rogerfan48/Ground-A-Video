@@ -9,11 +9,13 @@ from diffusers.utils import BaseOutput
 from diffusers.utils.import_utils import is_xformers_available
 from einops import rearrange
 from .cross_attention_old import CrossAttention # use locally defined CrossAttention
-if is_xformers_available():
+try:
     import xformers
     import xformers.ops
-else:
+    XFORMERS_AVAILABLE = True
+except ImportError:
     xformers = None
+    XFORMERS_AVAILABLE = False
 
 
 @dataclass
@@ -202,13 +204,9 @@ class SpatioTemporalTransformerBlock(nn.Module):
     
 
     def set_use_memory_efficient_attention_xformers(self, use_memory_efficient_attention_xformers: bool, valid:bool):
-        if not is_xformers_available():
-            print("Here is how to install it")
-            raise ModuleNotFoundError(
-                "Refer to https://github.com/facebookresearch/xformers for more information on how to install"
-                " xformers",
-                name="xformers",
-            )
+        if not XFORMERS_AVAILABLE:
+            print("xformers is not available, using PyTorch's scaled_dot_product_attention instead")
+            return
         elif not torch.cuda.is_available():
             raise ValueError(
                 "torch.cuda.is_available() should be True but is False. xformers' memory efficient attention is only"
@@ -223,7 +221,8 @@ class SpatioTemporalTransformerBlock(nn.Module):
                     torch.randn((1, 2, 40), device="cuda"),
                 )
             except Exception as e:
-                raise e
+                print(f"xformers test failed: {e}, will use PyTorch's scaled_dot_product_attention instead")
+                return
             self.attn1._use_memory_efficient_attention_xformers = use_memory_efficient_attention_xformers
             self.attn2._use_memory_efficient_attention_xformers = use_memory_efficient_attention_xformers
             
@@ -326,9 +325,19 @@ class CA(nn.Module):
         k = k.view(B,M,H,C).permute(0,2,1,3).reshape(B*H,M,C) 
         v = v.view(B,M,H,C).permute(0,2,1,3).reshape(B*H,M,C) 
         
-        out = xformers.ops.memory_efficient_attention(
-            q, k, v, attn_bias=mask, op=None
-        )
+        if XFORMERS_AVAILABLE:
+            out = xformers.ops.memory_efficient_attention(
+                q, k, v, attn_bias=mask, op=None
+            )
+        else:
+            # Fallback to PyTorch's scaled_dot_product_attention
+            q = q.view(B, H, N, C)
+            k = k.view(B, H, M, C)
+            v = v.view(B, H, M, C)
+            out = torch.nn.functional.scaled_dot_product_attention(
+                q, k, v, attn_mask=mask, dropout_p=0.0, is_causal=False
+            )
+            out = out.view(B*H, N, C)
         out = out.view(B,H,N,C).permute(0,2,1,3).reshape(B,N,(H*C)) 
 
         return self.to_out(out)
@@ -354,9 +363,27 @@ class SpatialTemporalAttnetion(CA):
         key = self.reshape_heads_to_batch_dim(key)
         value = self.reshape_heads_to_batch_dim(value)
         
-        out = xformers.ops.memory_efficient_attention(
-            query, key, value, attn_bias=attention_mask, op=None
-        )
+        if XFORMERS_AVAILABLE:
+            out = xformers.ops.memory_efficient_attention(
+                query, key, value, attn_bias=attention_mask, op=None
+            )
+        else:
+            # Fallback to PyTorch's scaled_dot_product_attention (memory efficient in PyTorch 2.0+)
+            # Reshape for SDPA: (B*H, N, C) -> (B, H, N, C)
+            B_times_H, N, C = query.shape
+            H = self.heads
+            B = B_times_H // H
+            
+            query = query.view(B, H, N, C)
+            key = key.view(B, H, -1, C)
+            value = value.view(B, H, -1, C)
+            
+            # Use PyTorch's native SDPA which is memory efficient
+            out = torch.nn.functional.scaled_dot_product_attention(
+                query, key, value, attn_mask=attention_mask, dropout_p=0.0, is_causal=False
+            )
+            # Reshape back: (B, H, N, C) -> (B*H, N, C)
+            out = out.view(B_times_H, N, C)
 
         out = self.reshape_batch_dim_to_heads(out)
         return self.to_out(out)
@@ -432,9 +459,25 @@ class ModulatedCrossAttention(nn.Module):
         k = self.reshape_heads_to_batch_dim(k)
         v = self.reshape_heads_to_batch_dim(v)
 
-        out = xformers.ops.memory_efficient_attention(
-            q, k, v, attn_bias=mask, op=None
-        )
+        if XFORMERS_AVAILABLE:
+            out = xformers.ops.memory_efficient_attention(
+                q, k, v, attn_bias=mask, op=None
+            )
+        else:
+            # Fallback to PyTorch's scaled_dot_product_attention
+            B_times_H, N, C = q.shape
+            H = self.heads
+            B = B_times_H // H
+            _, M, _ = k.shape
+            
+            q = q.view(B, H, N, C)
+            k = k.view(B, H, M, C)
+            v = v.view(B, H, M, C)
+            
+            out = torch.nn.functional.scaled_dot_product_attention(
+                q, k, v, attn_mask=mask, dropout_p=0.0, is_causal=False
+            )
+            out = out.view(B_times_H, N, C)
         out = self.reshape_batch_dim_to_heads(out)
 
         return self.to_out(out)

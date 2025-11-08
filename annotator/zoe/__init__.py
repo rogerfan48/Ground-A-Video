@@ -21,7 +21,7 @@ class ZoeDetector:
             load_file_from_url(remote_model_path, model_dir=annotator_ckpts_path)
         conf = get_config("zoedepth", "infer")
         model = ZoeDepth.build_from_config(conf)
-        model.load_state_dict(torch.load(modelpath)['model'])
+        model.load_state_dict(torch.load(modelpath, weights_only=False)['model'])
         model = model.cuda()
         model.device = 'cuda'
         model.eval()

@@ -15,8 +15,12 @@ from diffusers.models.embeddings import ImagePositionalEmbeddings
 from diffusers.utils import BaseOutput
 from diffusers.utils.import_utils import is_xformers_available
 
-import xformers
-import xformers.ops
+try:
+    import xformers
+    import xformers.ops
+    XFORMERS_AVAILABLE = True
+except ImportError:
+    XFORMERS_AVAILABLE = False
 
 
 class CrossAttention(nn.Module):
@@ -234,6 +238,9 @@ class CrossAttention(nn.Module):
 
     def _memory_efficient_attention_xformers(self, query, key, value, attention_mask):
         # TODO attention_mask
+        if not XFORMERS_AVAILABLE:
+            # Fallback to standard attention if xformers is not available
+            return self._attention(query, key, value, attention_mask)
         query = query.contiguous()
         key = key.contiguous()
         value = value.contiguous()
